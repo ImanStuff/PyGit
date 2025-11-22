@@ -1,0 +1,6 @@
+{% extends "pygit/base.html" %}
+{% block title %}{{ repo.name }} – {{ path }}{% endblock %}
+{% block content %}
+<h2>{{ repo.name }} / {{ path }}</h2>
+<pre><code>{{ content }}</code></pre>
+{% endblock %}

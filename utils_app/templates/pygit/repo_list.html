@@ -1,0 +1,12 @@
+{% extends "pygit/base.html" %}
+{% block title %}Repositories{% endblock %}
+{% block content %}
+<h2>Repositories</h2>
+<ul>
+  {% for repo in repos %}
+    <li><a href="{% url 'utils_app_:repo_overview' repo.name %}">{{ repo.name }}</a></li>
+  {% empty %}
+    <li>No repositories yet.</li>
+  {% endfor %}
+</ul>
+{% endblock %}

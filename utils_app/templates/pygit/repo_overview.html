@@ -1,0 +1,28 @@
+{% extends "pygit/base.html" %}
+{% block title %}{{ repo.name }}{% endblock %}
+{% block content %}
+<h2>{{ repo.name }}</h2>
+<p>HEAD: <code>{{ head_sha|slice:":7" }}</code> – {{ commit.message|linebreaksbr }}</p>
+
+<table class="file-list">
+  <thead><tr><th>Name</th><th>Type</th></tr></thead>
+  <tbody>
+    {% for e in entries %}
+      <tr>
+        <td class="name">
+          {% if e.type == "tree" %}
+            <a href="{% url 'utils_app_:tree_root' repo.name head_sha %}{{ e.name }}/">{{ e.name }}/</a>
+          {% else %}
+            <a href="{% url 'utils_app_:blob_view' repo.name head_sha e.name %}">{{ e.name }}</a>
+          {% endif %}
+        </td>
+        <td>{{ e.type }}</td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<p>
+  <a href="{% url 'utils_app_:commit_list' repo.name %}">View commit history</a>
+</p>
+{% endblock %}

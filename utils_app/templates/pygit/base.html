@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>{% block title %}py_git{% endblock %}</title>
+  <link rel="stylesheet" href="https://unpkg.com/@picocss/pico@latest/css/pico.min.css">
+  <style>
+    body { max-width: 1100px; margin: 0 auto; }
+    .file-list td.name { font-family: monospace; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1><a href="/api/git/">py_git</a></h1>
+  </header>
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>
