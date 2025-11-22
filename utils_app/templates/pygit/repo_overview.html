@@ -11,7 +11,7 @@
       <tr>
         <td class="name">
           {% if e.type == "tree" %}
-            <a href="{% url 'utils_app_:tree_root' repo.name head_sha %}{{ e.name }}/">{{ e.name }}/</a>
+            <a href="{% url 'utils_app_:tree_root' repo.name head_sha %}{{e.name}}">{{ e.name }}/</a>
           {% else %}
             <a href="{% url 'utils_app_:blob_view' repo.name head_sha e.name %}">{{ e.name }}</a>
           {% endif %}

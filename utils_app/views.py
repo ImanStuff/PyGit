@@ -60,7 +60,7 @@ def _resolve_tree_sha(repo, commit_sha, rel_path):
     if not rel_path:
         return current_tree_sha, commit
 
-    parts = rel_path.strip("/").split("/")
+    parts = [p for p in rel_path.strip("/").split("/") if p]
     for part in parts:
         tree_obj = get_object_or_404(GitObject, repo=repo, sha1=current_tree_sha)
         _, tree_body = load_object(tree_obj)
