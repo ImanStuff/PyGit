@@ -32,5 +32,6 @@ urlpatterns = [
         views.commit_detail,
         name="commit_detail",
     ),
+    path('<str:repo_name>/clone', views.clone_repo, name='clone_repo'),
 
 ]

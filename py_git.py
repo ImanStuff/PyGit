@@ -175,12 +175,98 @@ def push(repo_name):
     resp = requests.post(f"{REMOTE_URL}/{repo_name}/push", json=payload)
     print("Push response:", resp.status_code)
 
+
+def read_object(sha1):
+    path = os.path.join(OBJECTS_DIR, sha1[:2], sha1[2:])
+    with open(path, 'rb') as f:
+        raw = f.read()
+        
+    null_index = raw.find(b'\0')
+    header = raw[:null_index].decode()
+    obj_type, _ = header.split(' ')
+    data = raw[null_index+1:]
+    return obj_type, data
+
+def restore_tree(tree_sha, base_path="."):
+    obj_type, data = read_object(tree_sha)
+    if obj_type != 'tree':
+        raise ValueError(f"Expected tree object, got {obj_type}")
+    entries = data.decode().strip().split('\n')
+
+    for entry in entries:
+        if not entry: continue
+        e_type, e_sha, e_name = entry.split(' ', 2)
+        full_path = os.path.join(base_path, e_name)
+        
+        if e_type == 'blob':
+            _, content = read_object(e_sha)
+            with open(full_path, 'wb') as f:
+                f.write(content)
+        elif e_type == 'tree':
+            os.makedirs(full_path, exist_ok=True)
+            restore_tree(e_sha, full_path)
+
+def checkout(commit_sha):
+    obj_type, data = read_object(commit_sha)
+    if obj_type != 'commit':
+        raise ValueError("Not a commit object")
+    
+    lines = data.decode().split('\n')
+    tree_line = next(l for l in lines if l.startswith("tree "))
+    root_tree_sha = tree_line.split()[1]
+    print(f"Checking out tree: {root_tree_sha}...")
+    restore_tree(root_tree_sha)
+    with open(INDEX_FILE, 'w') as f:
+        json.dump({"root_tree": root_tree_sha}, f)
+
+def clone(repo_url):
+    repo_name = repo_url.rstrip('/').split('/')[-2]
+    if os.path.exists(repo_name):
+        print(f"Error: Directory '{repo_name}' already exists.")
+        return
+
+    print(f"Cloning into '{repo_name}'...")
+    os.makedirs(repo_name)
+    os.chdir(repo_name)
+
+    init()
+    print(f"Fetching from {repo_url}...")
+    try:
+        resp = requests.get(repo_url)
+        resp.raise_for_status()
+        data = resp.json()
+    except Exception as e:
+        print(f"Failed to connect: {e}")
+        return
+    objects = data.get("objects", [])
+    print(f"Received {len(objects)} objects.")
+    
+    for obj in objects:
+        sha1 = obj['sha1']
+        raw_data = bytes.fromhex(obj['data'])
+        path_dir = os.path.join(OBJECTS_DIR, sha1[:2])
+        os.makedirs(path_dir, exist_ok=True)
+        path = os.path.join(path_dir, sha1[2:])
+        with open(path, 'wb') as f:
+            f.write(raw_data)
+            
+    head_sha = data.get("head")
+    if head_sha:
+        with open(HEAD_FILE, 'w') as f:
+            f.write(head_sha)
+        print(f"Resolving deltas (checkout)... HEAD is at {head_sha[:7]}")
+        checkout(head_sha)
+    else:
+        print("warning: You appear to have cloned an empty repository.")
+    
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="py_git command")
-    parser.add_argument('command', choices=['init', 'add', 'commit', 'push', 'pull'], help='py_git commands')
+    parser.add_argument('command', choices=['init', 'add', 'commit', 'push', 'pull', 'clone'], help='py_git commands')
     parser.add_argument('-p', '--path', type=str, help='Path for add command')
     parser.add_argument('-m', '--message', type=str, help='Commit message')
     parser.add_argument('-r', '--repo_name', type=str, help='Repo Name for push command')
+    parser.add_argument('-u', '--url', type=str, help='URL for clone command')
 
     args = parser.parse_args()
 
@@ -198,8 +284,9 @@ if __name__ == '__main__':
         if not args.repo_name:
             parser.error('push command requires -r repo name')
         push(args.repo_name)
+    elif args.command == 'clone':
+        if not args.url:
+            parser.error("clone requires a URL")
+        clone(args.url)
     else:
         print('No command.')
-
-    
-    

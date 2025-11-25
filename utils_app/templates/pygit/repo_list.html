@@ -4,7 +4,12 @@
 <h2>Repositories</h2>
 <ul>
   {% for repo in repos %}
-    <li><a href="{% url 'utils_app_:repo_overview' repo.name %}">{{ repo.name }}</a></li>
+    <li>
+        <a href="{% url 'utils_app_:repo_overview' repo.name %}">{{ repo.name }}</a>
+        <code>
+          python py_git.py clone -u http://localhost:8000{% url 'utils_app_:clone_repo' repo_name=repo.name%}
+        </code>
+    </li>
   {% empty %}
     <li>No repositories yet.</li>
   {% endfor %}

@@ -154,3 +154,28 @@ def commit_detail(request, name, commit_sha):
     commit = parse_commit(body)
     commit["sha"] = commit_sha
     return render(request, "pygit/commit_detail.html", {"repo": repo, "commit": commit})
+
+
+def clone_repo(request: HttpRequest, repo_name: str) -> JsonResponse:
+    repo = get_object_or_404(Repository, name=repo_name)
+    try:
+        ref = Reference.objects.get(repo=repo, name="refs/heads/main")
+        head_sha = ref.commit_hash
+    except Reference.DoesNotExist:
+        head_sha = None
+    objects_qs = GitObject.objects.filter(repo=repo)
+    objects_data = []
+    
+    for obj in objects_qs:
+        objects_data.append({
+            "sha1": obj.sha1,
+            "type": obj.type,
+            "data": obj.data.hex() 
+        })
+    
+    return JsonResponse({
+        "status": "success",
+        "repo": repo.name,
+        "head": head_sha,
+        "objects": objects_data
+    })
